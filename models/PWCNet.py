@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.datasets.utils import download_url
 
-from external_packages.correlation_package.correlation import Correlation
+from ..external_packages.correlation_package.correlation import Correlation
 
 __all__ = ['pwc_dc_net']
 
