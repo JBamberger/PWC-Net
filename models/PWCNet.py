@@ -5,18 +5,18 @@ Jinwei Gu and Zhile Ren
 
 """
 
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
 import os
 
-os.environ['PYTHON_EGG_CACHE'] = 'tmp/'  # a writable directory
-from correlation_package.modules.corr import Correlation
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-__all__ = [
-    'pwc_dc_net', 'pwc_dc_net_old'
-]
+from external_packages.correlation_package.correlation import Correlation
+
+os.environ['PYTHON_EGG_CACHE'] = 'tmp/'  # a writable directory
+
+__all__ = ['pwc_dc_net']
 
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
@@ -66,7 +66,13 @@ class PWCDCNet(nn.Module):
         self.conv6a = conv(196, 196, kernel_size=3, stride=1)
         self.conv6b = conv(196, 196, kernel_size=3, stride=1)
 
-        self.corr = Correlation(pad_size=md, kernel_size=1, max_displacement=md, stride1=1, stride2=1, corr_multiply=1)
+        self.corr = Correlation(pad_size=md,
+                                kernel_size=1,
+                                max_displacement=md,
+                                stride1=1,
+                                stride2=1,
+                                corr_multiply=1)
+
         self.leakyRELU = nn.LeakyReLU(0.1)
 
         nd = (2 * md + 1) ** 2
@@ -131,7 +137,7 @@ class PWCDCNet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-                nn.init.kaiming_normal(m.weight.data, mode='fan_in')
+                nn.init.kaiming_normal_(m.weight.data, mode='fan_in')
                 if m.bias is not None:
                     m.bias.data.zero_()
 
@@ -153,16 +159,16 @@ class PWCDCNet(nn.Module):
 
         if x.is_cuda:
             grid = grid.cuda()
-        vgrid = Variable(grid) + flo
+        vgrid = grid + flo
 
         # scale grid to [-1,1] 
         vgrid[:, 0, :, :] = 2.0 * vgrid[:, 0, :, :].clone() / max(W - 1, 1) - 1.0
         vgrid[:, 1, :, :] = 2.0 * vgrid[:, 1, :, :].clone() / max(H - 1, 1) - 1.0
 
         vgrid = vgrid.permute(0, 2, 3, 1)
-        output = nn.functional.grid_sample(x, vgrid)
-        mask = torch.autograd.Variable(torch.ones(x.size())).cuda()
-        mask = nn.functional.grid_sample(mask, vgrid)
+        output = F.grid_sample(x, vgrid, align_corners=True)
+        mask = torch.ones(x.size()).cuda()
+        mask = F.grid_sample(mask, vgrid, align_corners=True)
 
         # if W==128:
         # np.save('mask.npy', mask.cpu().data.numpy())
