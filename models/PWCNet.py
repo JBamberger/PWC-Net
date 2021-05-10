@@ -11,10 +11,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.datasets.utils import download_url
 
 from external_packages.correlation_package.correlation import Correlation
-
-os.environ['PYTHON_EGG_CACHE'] = 'tmp/'  # a writable directory
 
 __all__ = ['pwc_dc_net']
 
@@ -268,8 +267,20 @@ class PWCDCNet(nn.Module):
             return flow2
 
 
-def pwc_dc_net(path=None):
+def pwc_dc_net(path=None, download_pretrained=True):
     model = PWCDCNet()
+
+    if download_pretrained:
+        if path is None:
+            path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'pwc_net.pth.tar')
+
+        if not os.path.exists(path):
+            url = 'https://github.com/NVlabs/PWC-Net/raw/master/PyTorch/pwc_net.pth.tar'
+            root = os.path.dirname(path)
+            filename = os.path.basename(path)
+            md5 = 'ee489efa80c6c7af0ac75eb35a6b178e'
+            download_url(url, root, filename, md5)
+
     if path is not None:
         data = torch.load(path)
         if 'state_dict' in data.keys():
