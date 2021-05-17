@@ -2,3 +2,4 @@
 *.pth.tar
 tmp/
 data/
+__pycache__/
