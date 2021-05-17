@@ -42,8 +42,6 @@ if len(sys.argv) > 2:
 if len(sys.argv) > 3:
     flow_fn = sys.argv[3]
 
-pwc_model_fn = './pwc_net.pth.tar'
-
 im_all = [imread(img) for img in [im1_fn, im2_fn]]
 im_all = [im[:, :, :3] for im in im_all]
 
@@ -68,7 +66,7 @@ for _i, _inputs in enumerate(im_all):
 
 im_all = torch.autograd.Variable(torch.cat(im_all, 1).cuda(), volatile=True)
 
-net = models.pwc_dc_net(pwc_model_fn)
+net = models.pwc_dc_net()
 net = net.cuda()
 net.eval()
 
